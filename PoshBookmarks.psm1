@@ -6,7 +6,8 @@ function Set-Bookmark {
         [Parameter(Mandatory = $true)]
         [string] $Id,
         [string] $Path = (Get-Location),
-        [bool] $Persistent = $true)
+        [ValidateSet("Session", "User")]
+        [string] $Scope = "User")
     if (!(Test-Path $Path)) {
         Write-Error "Unable to set bookmark; path not found: $Path"
         return
@@ -15,7 +16,7 @@ function Set-Bookmark {
     $script:bookmarks_paths_by_key[$Id] = $Path
     $script:bookmarks_keys_by_path[$bookmark.ProviderPath] = $Id
     
-    if ($Persistent) {
+    if ($Scope -eq "User") {
         Save-BookmarkStatus
     }
 }
@@ -56,7 +57,8 @@ function Get-BookmarkKeys {
 function Clear-Bookmark {
     param(
         [string] $Id = $null,
-        [bool] $Persistent = $true)
+        [ValidateSet("Session", "User")]
+        [string] $Scope = "User")
     if ([string]::IsNullOrWhiteSpace($Id)) {
         $path = (Get-Location).Path
         $bookmarkKey = $script:bookmarks_keys_by_path[$path]
@@ -70,7 +72,7 @@ function Clear-Bookmark {
         $script:bookmarks_keys_by_path.Remove($path)
     }
     
-    if ($Persistent) {
+    if ($Scope -eq "User") {
         Save-BookmarkStatus
     }
 }
@@ -105,7 +107,7 @@ function Restore-BookmarkStatus {
         
         $obj.psobject.properties | 
             %{
-                Set-Bookmark $_.Name $_.Value $false 
+                Set-Bookmark $_.Name $_.Value -Scope Session
             }
     }    
 }
